@@ -1,4 +1,4 @@
-package ru.danilov.testMigration.model;
+package ru.danilov.testMigration.intermediate_classes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

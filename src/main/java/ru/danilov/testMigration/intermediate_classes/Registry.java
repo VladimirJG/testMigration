@@ -1,4 +1,4 @@
-package ru.danilov.testMigration.model;
+package ru.danilov.testMigration.intermediate_classes;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,13 +14,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 import ru.danilov.testMigration.dep_for_model.SchedulerModel.WorkType;
+import ru.danilov.testMigration.model.ClosingAosrPsql;
 
 @Entity
-@Table(name = "closing_number_templates")
+@Table(name = "closing_aosr_registries")
 @Data
 @NoArgsConstructor
 @Accessors(chain = true)
-public class ClosingNumberTemplate {
+public class Registry {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -33,6 +34,6 @@ public class ClosingNumberTemplate {
   @Column(name = "work_type")
   private WorkType workType;
 
-  @Column(name = "template_id")
-  private Long templateId;
+  @Column(name = "registry_id")
+  private Long registryId;
 }

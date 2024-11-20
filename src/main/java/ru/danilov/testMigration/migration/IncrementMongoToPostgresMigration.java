@@ -1,3 +1,4 @@
+/*
 package ru.danilov.testMigration.migration;
 
 import com.mongodb.client.MongoClient;
@@ -22,10 +23,10 @@ import org.hibernate.cfg.Configuration;
 import ru.danilov.testMigration.dep_for_model.SchedulerModel.WorkType;
 import ru.danilov.testMigration.intermediate_classes.Act;
 import ru.danilov.testMigration.intermediate_classes.SecondaryAct;
-import ru.danilov.testMigration.model.ActKsInfo;
+import ru.danilov.testMigration.intermediate_classes.ActKsInfo;
 import ru.danilov.testMigration.model.ClosingAosrPsql;
 import ru.danilov.testMigration.model.ClosingNumberTemplate;
-import ru.danilov.testMigration.model.MigrationState;
+import ru.danilov.testMigration.intermediate_classes.MigrationState;
 
 public class IncrementMongoToPostgresMigration {
 
@@ -182,3 +183,4 @@ public class IncrementMongoToPostgresMigration {
     return closingAosrPsql;
   }
 }
+*/

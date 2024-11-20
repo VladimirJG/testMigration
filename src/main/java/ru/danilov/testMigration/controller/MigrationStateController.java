@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import ru.danilov.testMigration.model.MigrationState;
+import ru.danilov.testMigration.intermediate_classes.MigrationState;
 import ru.danilov.testMigration.service.MigrationStateService;
 
 @RestController

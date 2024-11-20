@@ -1,4 +1,4 @@
-package ru.danilov.testMigration.model;
+package ru.danilov.testMigration.intermediate_classes;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,6 +10,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+import ru.danilov.testMigration.model.ClosingAosrPsql;
 
 @Entity
 @Table(name = "act_ks_info")

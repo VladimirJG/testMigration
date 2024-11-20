@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+    <changeSet id="create-tables" author="Danilov V">
+        <createTable tableName="act_ks_info">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="closing_aosr_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_act_ks_info_closing_aosr" references="closing_aosr(id)"/>
+            </column>
+            <!-- Дополнительные поля, если есть -->
+        </createTable>
+
+        <createTable tableName="closing_aosr_journals">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="closing_aosr_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_closing_aosr_journals_closing_aosr" references="closing_aosr(id)"/>
+            </column>
+            <column name="journal_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="migration_state">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="last_migration_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="closing_aosr_registries">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="closing_aosr_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_closing_aosr_registries_closing_aosr" references="closing_aosr(id)"/>
+            </column>
+            <column name="work_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="registry_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="closing_number_templates">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="closing_aosr_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_closing_number_templates_closing_aosr" references="closing_aosr(id)"/>
+            </column>
+            <column name="work_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="template_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="secondary_acts">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="closing_aosr_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_secondary_acts_closing_aosr" references="closing_aosr(id)"/>
+            </column>
+            <column name="work_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="secondary_act_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="acts">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="closing_aosr_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_acts_closing_aosr" references="closing_aosr(id)"/>
+            </column>
+            <column name="work_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="act_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="closing_aosr">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="mongo_entity_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="journal_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="work_doc_section" type="VARCHAR(255)"/>
+            <column name="start_date" type="DATE"/>
+            <column name="end_date" type="DATE"/>
+            <column name="creation_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="creator_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

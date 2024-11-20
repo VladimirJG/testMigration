@@ -8,10 +8,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -20,19 +21,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import ru.danilov.testMigration.dep_for_model.SchedulerModel.WorkType;
 import ru.danilov.testMigration.intermediate_classes.Act;
-import ru.danilov.testMigration.intermediate_classes.ActKsInfo;
 import ru.danilov.testMigration.intermediate_classes.SecondaryAct;
+import ru.danilov.testMigration.model.ActKsInfo;
 import ru.danilov.testMigration.model.ClosingAosrPsql;
 import ru.danilov.testMigration.model.ClosingNumberTemplate;
-import ru.danilov.testMigration.intermediate_classes.Journal;
-import ru.danilov.testMigration.intermediate_classes.MigrationState;
-import ru.danilov.testMigration.intermediate_classes.Registry;
+import ru.danilov.testMigration.model.MigrationState;
 import ru.danilov.testMigration.service.ClosingAosrPsqlService;
 import ru.danilov.testMigration.service.MigrationStateService;
 
 @Component
 @Slf4j
 public class MongoToPostgresMigration {
+
   @Value("${spring.data.mongodb.uri}")
   private String mongoUri;
 
@@ -60,13 +60,17 @@ public class MongoToPostgresMigration {
     String mongoCollectionName = "ClosingAosr";
     MongoCollection<Document> collection = database.getCollection(mongoCollectionName);
 
-    // Условие переноса: endDate должно быть равно ISODate("2024-11-29T21:00:00.000Z")
-    Document filter = new Document("endDate", new Document("$eq", new Date(1732885200000L)));
+    // Получение последней даты переноса
+    log.info("Fetching last migration state");
+    MigrationState migrationState = migrationStateService.getLastMigrationState();
+    LocalDateTime lastMigrationDate =
+        migrationState != null ? migrationState.getLastMigrationDate() : LocalDateTime.MIN;
 
-    // Перенос данных, удовлетворяющих условию
-    log.info("Migrating data with endDate equal to 2024-11-29T21:00:00.000Z");
+    // Перенос данных, добавленных или измененных после последнего переноса
+    log.info("Migrating data created or modified after {}", lastMigrationDate);
     List<ClosingAosrPsql> closingAosrPsqls = new ArrayList<>();
-    for (Document doc : collection.find(filter)) {
+    for (Document doc : collection.find(
+        new Document("creationDate", new Document("$gt", lastMigrationDate)))) {
       ClosingAosrPsql closingAosrPsql = mapMongoDocToPostgresEntity(doc);
       closingAosrPsqls.add(closingAosrPsql);
     }
@@ -100,10 +104,9 @@ public class MongoToPostgresMigration {
 
     // Преобразование других полей
     closingAosrPsql.setWorkDocSection(doc.getString("workDocSection"));
-    closingAosrPsql.setStartDate(
-        LocalDate.parse(
-            doc.getDate("startDate").toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-                .toString()));
+    closingAosrPsql.setStartDate(LocalDate.parse(
+        doc.getDate("startDate").toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+            .toString()));
     closingAosrPsql.setEndDate(LocalDate.parse(
         doc.getDate("endDate").toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
             .toString()));
@@ -153,55 +156,51 @@ public class MongoToPostgresMigration {
     List<ObjectId> journals = doc.getList("journals", ObjectId.class);
     if (journals != null) {
       log.debug("Processing journals: {}", journals);
-      for (ObjectId journalId : journals) {
-        Journal journal = new Journal();
-        journal.setClosingAosr(closingAosrPsql);
-        journal.setJournalId((long) journalId.getTimestamp());
-        closingAosrPsql.getJournals().add(journal);
-      }
+      List<Long> journalIds =
+          journals.stream().map(ObjectId::getTimestamp).map(timestamp -> (long) timestamp)
+              .collect(Collectors.toList());
+      closingAosrPsql.setJournals(journalIds);
     }
 
     // Обработка registries
     Document registriesDoc = doc.get("registries", Document.class);
     if (registriesDoc != null) {
       log.debug("Processing registries: {}", registriesDoc);
+      Map<WorkType, Long> registries = new EnumMap<>(WorkType.class);
       for (Map.Entry<String, Object> entry : registriesDoc.entrySet()) {
         WorkType workType = WorkType.valueOf(entry.getKey());
         ObjectId objectId = (ObjectId) entry.getValue();
-        Registry registry = new Registry();
-        registry.setClosingAosr(closingAosrPsql);
-        registry.setWorkType(workType);
-        registry.setRegistryId((long) objectId.getTimestamp());
-        closingAosrPsql.getRegistries().add(registry);
+        registries.put(workType, (long) objectId.getTimestamp());
       }
+      closingAosrPsql.setRegistries(registries);
     }
 
     // Обработка attachedKsActs
     List<Document> attachedKsActs = doc.getList("attachedKsActs", Document.class);
     if (attachedKsActs != null) {
       log.debug("Processing attachedKsActs: {}", attachedKsActs);
+      List<ActKsInfo> actKsInfos = new ArrayList<>();
       for (Document actDoc : attachedKsActs) {
         ActKsInfo actKsInfo = new ActKsInfo();
         // Преобразование полей ActKsInfo
-        actKsInfo.setClosingAosr(closingAosrPsql);
-        closingAosrPsql.getAttachedKsActs().add(actKsInfo);
+        actKsInfos.add(actKsInfo);
       }
+      closingAosrPsql.setAttachedKsActs(actKsInfos);
     }
 
     // Обработка closingNumberTemplates
     Document closingNumberTemplatesDoc = doc.get("closingNumberTemplates", Document.class);
     if (closingNumberTemplatesDoc != null) {
       log.debug("Processing closingNumberTemplates: {}", closingNumberTemplatesDoc);
+      Map<WorkType, Long> closingNumberTemplates = new EnumMap<>(WorkType.class);
       for (Map.Entry<String, Object> entry : closingNumberTemplatesDoc.entrySet()) {
         WorkType workType = WorkType.valueOf(entry.getKey());
         Document templateDoc = (Document) entry.getValue();
         ClosingNumberTemplate template = new ClosingNumberTemplate();
         // Преобразование полей ClosingNumberTemplate
-        template.setClosingAosr(closingAosrPsql);
-        template.setWorkType(workType);
-        template.setTemplateId((long) templateDoc.getObjectId("_id").getTimestamp());
-        closingAosrPsql.getClosingNumberTemplates().add(template);
+        closingNumberTemplates.put(workType, template.getId());
       }
+      closingAosrPsql.setClosingNumberTemplates(closingNumberTemplates);
     }
 
     return closingAosrPsql;
